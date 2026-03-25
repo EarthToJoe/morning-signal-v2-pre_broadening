@@ -134,19 +134,27 @@ function daysAgo(n: number): string {
 }
 
 /** Build a natural-language objective for a topic category.
- *  This tells Parallel AI *what kind of content* we want — specific news articles,
- *  not generic website homepages. The objective is the primary quality lever. */
-function buildObjective(category: TopicCategory): string {
+ *  If the TopicConfig has a custom `objective` field, use it.
+ *  Otherwise fall back to the hardcoded Morning Signal defaults.
+ *  The base boilerplate about "specific articles, not homepages" is always prepended. */
+function buildObjective(topic: TopicConfig): string {
   const base = `Find specific, individual news articles published in the last few days. I need articles with unique URLs that point to individual stories — NOT website homepages, section landing pages, company LinkedIn profiles, or topic index pages. Each result should be a single news story or report with a specific headline, author or publication date, and substantive content. Prefer articles from established news outlets.`;
 
-  const categoryContext: Record<TopicCategory, string> = {
-    defense: `${base} Topic: U.S. and allied defense developments including military contracts, weapons programs, force posture changes, Pentagon policy, NATO operations, defense industry news, and military technology. Preferred sources: Defense News, Breaking Defense, Defense One, Military Times, Stars and Stripes, Reuters, AP, USNI News.`,
-    energy: `${base} Topic: Energy sector developments including oil & gas markets, renewable energy projects, grid infrastructure, nuclear energy policy, energy legislation, utility company news, and energy technology. Preferred sources: E&E News, Utility Dive, Reuters, Bloomberg Energy, S&P Global, Rigzone.`,
-    technology: `${base} Topic: Technology developments relevant to government and enterprise including cybersecurity incidents, AI policy and regulation, cloud computing contracts, semiconductor supply chain, space technology, and federal IT modernization. Preferred sources: Ars Technica, The Verge, Wired, Federal News Network, NextGov, CyberScoop.`,
-    policy: `${base} Topic: U.S. government policy affecting defense, energy, and technology sectors including executive orders, congressional legislation, regulatory actions, budget decisions, and agency leadership changes. Preferred sources: Politico, The Hill, Reuters, AP, Federal News Network, Roll Call.`,
+  // If the topic config has a custom objective, use it
+  if ((topic as any).objective) {
+    return `${base} ${(topic as any).objective}`;
+  }
+
+  // Fallback: hardcoded Morning Signal defaults
+  const defaults: Record<string, string> = {
+    defense: `Topic: U.S. and allied defense developments including military contracts, weapons programs, force posture changes, Pentagon policy, NATO operations, defense industry news, and military technology. Preferred sources: Defense News, Breaking Defense, Defense One, Military Times, Stars and Stripes, Reuters, AP, USNI News.`,
+    energy: `Topic: Energy sector developments including oil & gas markets, renewable energy projects, grid infrastructure, nuclear energy policy, energy legislation, utility company news, and energy technology. Preferred sources: E&E News, Utility Dive, Reuters, Bloomberg Energy, S&P Global, Rigzone.`,
+    technology: `Topic: Technology developments relevant to government and enterprise including cybersecurity incidents, AI policy and regulation, cloud computing contracts, semiconductor supply chain, space technology, and federal IT modernization. Preferred sources: Ars Technica, The Verge, Wired, Federal News Network, NextGov, CyberScoop.`,
+    policy: `Topic: U.S. government policy affecting defense, energy, and technology sectors including executive orders, congressional legislation, regulatory actions, budget decisions, and agency leadership changes. Preferred sources: Politico, The Hill, Reuters, AP, Federal News Network, Roll Call.`,
   };
 
-  return categoryContext[category];
+  const categoryPart = defaults[topic.category] || `Topic: ${topic.displayName}. Search for recent news and developments.`;
+  return `${base} ${categoryPart}`;
 }
 
 export class ArticleDiscoveryService {
@@ -176,17 +184,19 @@ export class ArticleDiscoveryService {
     const warnings: string[] = [];
     let searchApiCalls = 0;
     let totalCost = 0;
-    const categoryCoverage: Record<TopicCategory, number> = { defense: 0, energy: 0, technology: 0, policy: 0 };
+    const categoryCoverage: Record<string, number> = {};
+    for (const topic of topicConfigs.filter(t => t.isActive)) {
+      categoryCoverage[topic.category] = 0;
+    }
 
-    const afterDate = daysAgo(3); // Only articles from the last 3 days
-    // Exclude domains that consistently return non-article pages (profiles, landing pages)
+    const afterDate = daysAgo(3);
     const excludeDomains = ['linkedin.com', 'facebook.com', 'twitter.com', 'youtube.com'];
 
     for (const topic of topicConfigs.filter(t => t.isActive)) {
       try {
         const startTime = Date.now();
         const results = await this.searchClient.search({
-          objective: buildObjective(topic.category),
+          objective: buildObjective(topic),
           searchQueries: topic.searchQueries,
           maxResults: 15,
           afterDate,
@@ -262,7 +272,7 @@ export class ArticleDiscoveryService {
 
     try {
       const results = await this.searchClient.search({
-        objective: `Find specific, recently published news articles about the following topic. Return individual stories with concrete details, not website homepages or landing pages. Focus on defense, energy, technology, and government policy sources.`,
+        objective: `Find specific, recently published news articles about the following topic. Return individual stories with concrete details, not website homepages or landing pages.`,
         searchQueries: [queryText],
         maxResults: 15,
         afterDate: daysAgo(7), // Custom searches look back a week
@@ -292,8 +302,10 @@ export class ArticleDiscoveryService {
 
       log.info('Custom search completed', { query: queryText, newArticles: newArticles.length, duplicatesRemoved });
 
-      const categoryCoverage: Record<TopicCategory, number> = { defense: 0, energy: 0, technology: 0, policy: 0 };
-      for (const a of deduplicated) categoryCoverage[a.category]++;
+      const categoryCoverage: Record<string, number> = {};
+      for (const a of deduplicated) {
+        categoryCoverage[a.category] = (categoryCoverage[a.category] || 0) + 1;
+      }
 
       return {
         articles: deduplicated,

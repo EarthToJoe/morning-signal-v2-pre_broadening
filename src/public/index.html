@@ -5,70 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Morning Signal — Editorial Review</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; color: #1a1a2e; }
-    .header { background: #0f3460; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-    .header h1 { font-size: 20px; font-weight: 600; }
-    .header .status { font-size: 13px; padding: 4px 12px; border-radius: 12px; background: rgba(255,255,255,0.2); }
-    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
-    .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .card h3 { font-size: 16px; margin-bottom: 8px; }
-    .card p { font-size: 14px; color: #555; line-height: 1.5; }
-    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
-    .badge-lead { background: #e8f5e9; color: #2e7d32; }
-    .badge-quick { background: #e3f2fd; color: #1565c0; }
-    .badge-watch { background: #fff3e0; color: #e65100; }
-    .badge-manual { background: #fce4ec; color: #c62828; }
-    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
-    .btn-primary { background: #0f3460; color: white; }
-    .btn-primary:hover { background: #1a4a8a; }
-    .btn-secondary { background: #e0e0e0; color: #333; }
-    .btn-danger { background: #c62828; color: white; }
-    .btn-success { background: #2e7d32; color: white; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-    .role-select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
-    .source-count { font-size: 12px; color: #888; }
-    .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
-    .input-group input, .input-group textarea { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-    .cost-bar { display: flex; gap: 16px; font-size: 13px; padding: 12px 16px; background: #f0f0f5; border-radius: 6px; flex-wrap: wrap; }
-    .cost-bar .item { display: flex; flex-direction: column; }
-    .cost-bar .item .label { color: #888; font-size: 11px; }
-    .cost-bar .item .value { font-weight: 600; }
-    .cost-bar .over-budget { color: #c62828; }
-    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-    .tab { padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; color: #888; }
-    .tab.active { color: #0f3460; border-bottom-color: #0f3460; }
-    .preview-frame { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; }
-    .preview-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
-    .subject-options { display: flex; flex-direction: column; gap: 8px; }
-    .subject-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; }
-    .subject-option.selected { border-color: #0f3460; background: #f0f4ff; }
-    .subject-option input[type="radio"] { accent-color: #0f3460; }
-    .loading { text-align: center; padding: 40px; color: #888; }
-    .error { background: #fce4ec; color: #c62828; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
-    #app { min-height: 100vh; }
-    .section-card { border-left: 3px solid #0f3460; }
-    .section-card.lead_story { border-left-color: #2e7d32; }
-    .section-card.quick_hit { border-left-color: #1565c0; }
-    .section-card.watch_list { border-left-color: #e65100; }
-    .hidden { display: none; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f7;color:#1a1a2e}
+    .header{background:#0f3460;color:white;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+    .header h1{font-size:20px;font-weight:600}
+    .header .status{font-size:13px;padding:4px 12px;border-radius:12px;background:rgba(255,255,255,0.2)}
+    .container{max-width:1100px;margin:0 auto;padding:24px}
+    .card{background:white;border-radius:8px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+    .card h3{font-size:16px;margin-bottom:8px}
+    .card p{font-size:14px;color:#555;line-height:1.5}
+    .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase}
+    .badge-lead{background:#e8f5e9;color:#2e7d32}
+    .badge-quick{background:#e3f2fd;color:#1565c0}
+    .badge-watch{background:#fff3e0;color:#e65100}
+    .badge-manual{background:#fce4ec;color:#c62828}
+    .btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500}
+    .btn-primary{background:#0f3460;color:white}
+    .btn-primary:hover{background:#1a4a8a}
+    .btn-secondary{background:#e0e0e0;color:#333}
+    .btn-danger{background:#c62828;color:white}
+    .btn-success{background:#2e7d32;color:white}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .role-select{padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px}
+    .source-count{font-size:12px;color:#888}
+    .input-group{display:flex;gap:8px;margin-bottom:12px}
+    .input-group input,.input-group textarea{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px}
+    .cost-bar{display:flex;gap:16px;font-size:13px;padding:12px 16px;background:#f0f0f5;border-radius:6px;flex-wrap:wrap}
+    .cost-bar .item{display:flex;flex-direction:column}
+    .cost-bar .item .label{color:#888;font-size:11px}
+    .cost-bar .item .value{font-weight:600}
+    .cost-bar .over-budget{color:#c62828}
+    .preview-frame{border:1px solid #ddd;border-radius:8px;overflow:hidden;background:white}
+    .preview-toggle{display:flex;gap:8px;margin-bottom:12px}
+    .subject-options{display:flex;flex-direction:column;gap:8px}
+    .subject-option{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;cursor:pointer}
+    .subject-option.selected{border-color:#0f3460;background:#f0f4ff}
+    .subject-option input[type="radio"]{accent-color:#0f3460}
+    .error{background:#fce4ec;color:#c62828;padding:12px 16px;border-radius:6px;margin-bottom:16px}
+    .section-card{border-left:3px solid #0f3460}
+    .section-card.lead_story{border-left-color:#2e7d32}
+    .section-card.quick_hit{border-left-color:#1565c0}
+    .section-card.watch_list{border-left-color:#e65100}
+    .hidden{display:none}
+    /* Phase progress bar */
+    .phase-bar{display:flex;gap:0;margin-bottom:24px;background:#e0e0e0;border-radius:8px;overflow:hidden}
+    .phase-step{flex:1;text-align:center;padding:10px 8px;font-size:13px;font-weight:500;color:#888;position:relative}
+    .phase-step.active{background:#0f3460;color:white}
+    .phase-step.done{background:#2e7d32;color:white}
+    /* Story editing */
+    .story-editor{border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px}
+    .story-editor textarea{width:100%;min-height:120px;border:1px solid #ddd;border-radius:6px;padding:10px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical}
+    .story-editor input[type="text"]{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:15px;font-weight:600}
+    .word-count{font-size:12px;color:#888;margin-top:4px}
+    /* Theme picker */
+    .theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:12px}
+    .theme-swatch{border:2px solid #ddd;border-radius:8px;padding:12px;cursor:pointer;text-align:center;font-size:12px;transition:border-color 0.2s}
+    .theme-swatch.selected{border-color:#0f3460;box-shadow:0 0 0 2px rgba(15,52,96,0.3)}
+    .theme-swatch .preview{height:40px;border-radius:4px;margin-bottom:6px}
+    .color-row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+    .color-row label{font-size:12px;color:#666;display:flex;flex-direction:column;gap:4px}
+    .color-row input[type="color"]{width:48px;height:32px;border:1px solid #ddd;border-radius:4px;cursor:pointer}
+    /* Editable headline in Phase 1 */
+    .headline-edit{width:100%;padding:6px 10px;border:1px dashed #ccc;border-radius:4px;font-size:15px;font-weight:600;background:#fafafa;margin-bottom:4px}
+    .headline-edit:focus{border-color:#0f3460;background:white;outline:none}
   </style>
 </head>
 <body>
   <div id="app">
     <div class="header">
       <h1>The Morning Signal — Editorial Review</h1>
-      <div>
-        <span class="status" id="pipeline-status">Not started</span>
-      </div>
+      <span class="status" id="pipeline-status">Not started</span>
     </div>
     <div class="container" id="main-content">
-      <!-- Start Screen -->
       <div id="start-screen">
-        <div class="card" style="text-align:center; padding:40px;">
+        <div class="card" style="text-align:center;padding:40px;">
           <h3 style="margin-bottom:16px;">Start a New Edition</h3>
-          <p style="margin-bottom:20px;">This will discover articles, cluster them into story candidates, and present them for your review.</p>
+          <p style="margin-bottom:20px;">Discover articles, cluster into stories, write, and assemble your newsletter.</p>
           <button class="btn btn-primary" onclick="startPipeline()" id="start-btn">Start Pipeline</button>
         </div>
         <div class="card">
@@ -79,12 +92,9 @@
           </div>
         </div>
       </div>
-
-      <!-- Phase 1: Story Selection -->
       <div id="phase1-screen" class="hidden"></div>
-
-      <!-- Phase 2: Content Review -->
       <div id="phase2-screen" class="hidden"></div>
+      <div id="phase3-screen" class="hidden"></div>
     </div>
   </div>
   <script src="/app.js"></script>

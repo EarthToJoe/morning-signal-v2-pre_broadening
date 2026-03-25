@@ -109,4 +109,102 @@ Supabase Auth is probably the right call since we're already on Supabase. It wou
 
 ---
 
+## Idea: Three-Phase Editorial Workflow
+
+The current flow is: Story Selection → Content Review. The user wants to add more editorial control between those steps. The new flow would be:
+
+**Phase 1: Story Selection** (exists today)
+- Pick which stories to include, assign roles (lead, quick hit, watch list)
+- NEW: Let the user manually type/edit the headline for each selected story before writing begins
+- This gives GPT a better headline to work from, or lets the editor override the AI-suggested one
+
+**Phase 2: Story Editing** (new)
+- After GPT writes all the stories, show each story individually with its full text
+- Let the user edit the text of any story directly (inline editing)
+- Let the user regenerate a story if they don't like it
+- Let the user reorder stories within their section
+- This is where the editor fine-tunes the content before it goes into the newsletter template
+
+**Phase 3: Newsletter Editing** (new — replaces current Phase 2)
+- Show the assembled newsletter in the email template
+- Let the user change the theme/color/style of the newsletter (color scheme, fonts, header style)
+- Let the user pick the subject line
+- Desktop/mobile preview toggle
+- Final approve/reject
+
+This is a cleaner separation of concerns:
+- Phase 1 = what stories
+- Phase 2 = what the stories say
+- Phase 3 = how the newsletter looks
+
+### Theme/Style System
+The newsletter is built with MJML, which supports variables for colors, fonts, and spacing. We could offer:
+- Preset themes (e.g., "Professional Dark", "Clean Light", "Government Blue")
+- Custom color picker for header, accent, background, text colors
+- Font selection (limited to email-safe fonts)
+- These settings would be stored per newsletter profile and applied during assembly
+
+### Implementation Approach
+- Phase 2 (story editing) is mostly a UI change — the backend already supports editing sections via POST /edit-section
+- Phase 3 (newsletter editing) needs theme variables added to the MJML template and a theme picker UI
+- The headline editing in Phase 1 is a small UI addition — add an editable text field next to each selected story
+
+### When to Build
+This is the next major feature after the custom topic work. The three-phase flow makes the tool feel much more like a real editorial product.
+
+---
+
 *These notes are for reference. When we're ready to implement any of these, we can create proper spec tasks.*
+
+
+---
+
+## Idea: User-Defined Newsletter Topics (Custom Topic Flow) — ACTIVE
+
+*Replaces the earlier "Multi-Topic Newsletter Platform" idea with a concrete design.*
+
+### The Problem
+Search inputs (objectives, search queries, excluded domains) are hardcoded for defense/energy/tech/policy. We want any user to create a newsletter about any topic. But the Parallel AI inputs that produce good results aren't intuitive — phrases like "NOT website homepages, section landing pages" and specific source preferences are things we figured out through testing, not things a user would naturally write.
+
+### Design Decision: Two-Layer Input
+
+**Layer 1 (what the user sees):** Simple, friendly inputs
+- Newsletter name
+- Audience description ("Who reads this?")
+- Topic categories (user defines 2-6 categories with names)
+- For each category: a plain-English description of what to look for + optional preferred sources
+- Days back (how recent)
+
+**Layer 2 (what Parallel AI gets):** The system wraps the user's input in our proven prompt structure
+- The "find specific articles, NOT homepages" boilerplate gets added automatically
+- The user's category description becomes the topic-specific part of the objective
+- The user's preferred sources get appended
+- Excluded domains (linkedin, facebook, etc.) are applied automatically
+- The user CAN see and edit the full generated objective if they want (advanced/transparency mode)
+
+This way a user can type "cryptocurrency regulation and DeFi developments" and the system wraps it into a proper Parallel AI objective without the user needing to know the magic words.
+
+### Default Presets
+Presets are pre-built newsletter configurations that fill in all the fields. When a user picks a preset:
+- All fields get populated with the preset values
+- The user can see exactly what the preset contains
+- The user can modify any field before creating
+- This teaches users what good inputs look like
+
+Presets to ship with:
+- **The Morning Signal** — defense, energy, technology, policy (our original)
+- **Tech Pulse** — AI/ML, cybersecurity, cloud, startups
+- **Energy Watch** — oil & gas, renewables, grid, nuclear, climate policy
+- **Capitol Brief** — legislation, executive orders, regulatory, elections
+- **Global Markets** — equities, forex, commodities, central banks
+
+### UI Flow
+The start screen becomes a "Create Newsletter" flow:
+1. Pick a preset OR start blank
+2. If preset: fields populate, user reviews and can edit anything
+3. If blank: user fills in name, audience, categories
+4. "Show search details" toggle reveals the raw Parallel AI objectives (transparency)
+5. Save → creates the newsletter profile → starts the pipeline
+
+### Key Principle
+The user should always be able to see what's being sent to Parallel AI. No black boxes. But the default view should be simple and friendly, with the technical details available on demand.

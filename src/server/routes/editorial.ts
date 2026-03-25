@@ -8,7 +8,7 @@ import { CostTrackerService } from '../../services/cost-tracker';
 import { PromptManagerService } from '../../services/prompt-manager';
 import { EmailDeliveryService } from '../../services/email-delivery';
 import { SubscriberManagerService } from '../../services/subscriber-manager';
-import { NewsletterAssemblerService } from '../../services/newsletter-assembler';
+import { NewsletterAssemblerService, PRESET_THEMES, DEFAULT_THEME, NewsletterTheme } from '../../services/newsletter-assembler';
 import { PipelineOrchestrator } from '../../pipeline/orchestrator';
 import { config } from '../../config';
 import { v4 as uuidv4 } from 'uuid';
@@ -349,6 +349,77 @@ router.post('/:correlationId/reject', async (req: Request, res: Response) => {
     }
 
     res.json({ success: true, message: returnToPhase1 ? 'Returned to Phase 1' : 'Rejection recorded' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/editorial/themes — Get available themes
+router.get('/themes', (_req: Request, res: Response) => {
+  res.json({ presets: PRESET_THEMES, default: DEFAULT_THEME });
+});
+
+// POST /api/editorial/:correlationId/reassemble — Re-assemble newsletter with theme + edited sections
+router.post('/:correlationId/reassemble', async (req: Request, res: Response) => {
+  try {
+    const { theme } = req.body;
+    const editionId = await getEditionId(req.params.correlationId);
+
+    // Load written sections from DB
+    const sectionsResult = await query(
+      'SELECT * FROM written_sections WHERE edition_id = $1 ORDER BY role, id', [editionId]
+    );
+    const sections = sectionsResult.rows;
+
+    const leadSection = sections.find((s: any) => s.role === 'lead_story');
+    const quickHitSections = sections.filter((s: any) => s.role === 'quick_hit');
+    const watchListSections = sections.filter((s: any) => s.role === 'watch_list');
+
+    if (!leadSection) return res.status(400).json({ error: 'No lead story found' });
+
+    const writtenNewsletter = {
+      leadStory: { role: 'lead_story' as const, storyCandidateId: leadSection.story_candidate_id, headline: leadSection.headline, htmlContent: leadSection.html_content, plainTextContent: leadSection.plain_text_content, wordCount: leadSection.word_count, sourceLinks: leadSection.source_links || [] },
+      quickHits: quickHitSections.map((s: any) => ({ role: 'quick_hit' as const, storyCandidateId: s.story_candidate_id, headline: s.headline, htmlContent: s.html_content, plainTextContent: s.plain_text_content, wordCount: s.word_count, sourceLinks: s.source_links || [] })),
+      watchList: watchListSections.map((s: any) => ({ role: 'watch_list' as const, storyCandidateId: s.story_candidate_id, headline: s.headline, htmlContent: s.html_content, plainTextContent: s.plain_text_content, wordCount: s.word_count, sourceLinks: s.source_links || [] })),
+      totalWordCount: 0, tokenUsage: { input: 0, output: 0 }, cost: 0,
+    };
+
+    const edition = await query('SELECT edition_number, edition_date FROM editions WHERE correlation_id = $1', [req.params.correlationId]);
+    const subjectResult = await query('SELECT selected_subject_line FROM assembled_newsletters WHERE edition_id = $1', [editionId]);
+    const subjectLine = subjectResult.rows[0]?.selected_subject_line || config.newsletterName;
+
+    const assembled = await newsletterAssembler.assemble(
+      writtenNewsletter, subjectLine,
+      edition.rows[0].edition_number, edition.rows[0].edition_date,
+      req.params.correlationId, theme
+    );
+
+    // Update assembled newsletter in DB
+    await query(
+      `UPDATE assembled_newsletters SET html_content = $1, plain_text_content = $2, section_metadata = $3 WHERE edition_id = $4`,
+      [assembled.html, assembled.plainText, JSON.stringify(assembled.sectionMetadata), editionId]
+    );
+
+    res.json({ html: assembled.html, plainText: assembled.plainText, sectionMetadata: assembled.sectionMetadata });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/editorial/:correlationId/sections — Get individual written sections for editing
+router.get('/:correlationId/sections', async (req: Request, res: Response) => {
+  try {
+    const editionId = await getEditionId(req.params.correlationId);
+    const result = await query(
+      'SELECT id, story_candidate_id, role, headline, html_content, plain_text_content, word_count, source_links FROM written_sections WHERE edition_id = $1 ORDER BY role, id',
+      [editionId]
+    );
+    const sections = result.rows.map((r: any) => ({
+      id: r.id, storyCandidateId: r.story_candidate_id, role: r.role,
+      headline: r.headline, htmlContent: r.html_content, plainTextContent: r.plain_text_content,
+      wordCount: r.word_count, sourceLinks: r.source_links || [],
+    }));
+    res.json({ sections });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

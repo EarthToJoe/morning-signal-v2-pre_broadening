@@ -1,20 +1,20 @@
 <mjml>
   <mj-head>
     <mj-attributes>
-      <mj-all font-family="Georgia, 'Times New Roman', serif" />
-      <mj-text font-size="16px" line-height="1.6" color="#1a1a2e" />
+      <mj-all font-family="{{fontFamily}}" />
+      <mj-text font-size="16px" line-height="1.6" color="{{textColor}}" />
       <mj-section padding="0 20px" />
     </mj-attributes>
     <mj-style>
-      a { color: #0f3460; text-decoration: underline; }
+      a { color: {{accentColor}}; text-decoration: underline; }
       .lead-story h2 { margin-bottom: 8px; }
       .quick-hit { margin-bottom: 16px; }
       .watch-item { margin-bottom: 12px; }
     </mj-style>
   </mj-head>
-  <mj-body background-color="#f4f4f8">
+  <mj-body background-color="{{backgroundColor}}">
     <!-- Header -->
-    <mj-section background-color="#0f3460" padding="20px 30px">
+    <mj-section background-color="{{headerColor}}" padding="20px 30px">
       <mj-column>
         <mj-text color="#ffffff" font-size="28px" font-weight="bold" align="center">
           {{newsletterName}}
@@ -26,9 +26,9 @@
     </mj-section>
 
     <!-- Lead Story -->
-    <mj-section background-color="#ffffff" padding="24px 30px">
+    <mj-section background-color="{{cardColor}}" padding="24px 30px">
       <mj-column>
-        <mj-text font-size="12px" color="#0f3460" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
+        <mj-text font-size="12px" color="{{accentColor}}" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
           Lead Story
         </mj-text>
         <mj-text font-size="22px" font-weight="bold" padding-top="8px">
@@ -43,9 +43,9 @@
     <mj-section padding="0"><mj-column><mj-divider border-color="#e0e0e0" border-width="1px" /></mj-column></mj-section>
 
     <!-- Quick Hits -->
-    <mj-section background-color="#ffffff" padding="24px 30px">
+    <mj-section background-color="{{cardColor}}" padding="24px 30px">
       <mj-column>
-        <mj-text font-size="12px" color="#0f3460" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
+        <mj-text font-size="12px" color="{{accentColor}}" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
           Quick Hits
         </mj-text>
         {{quickHitsContent}}
@@ -55,9 +55,9 @@
     <mj-section padding="0"><mj-column><mj-divider border-color="#e0e0e0" border-width="1px" /></mj-column></mj-section>
 
     <!-- Watch List -->
-    <mj-section background-color="#ffffff" padding="24px 30px">
+    <mj-section background-color="{{cardColor}}" padding="24px 30px">
       <mj-column>
-        <mj-text font-size="12px" color="#0f3460" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
+        <mj-text font-size="12px" color="{{accentColor}}" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
           On the Watch List
         </mj-text>
         {{watchListContent}}
@@ -65,7 +65,7 @@
     </mj-section>
 
     <!-- Footer -->
-    <mj-section background-color="#1a1a2e" padding="20px 30px">
+    <mj-section background-color="{{footerColor}}" padding="20px 30px">
       <mj-column>
         <mj-text color="#a0a0b0" font-size="12px" align="center">
           You're receiving this because you subscribed to {{newsletterName}}.

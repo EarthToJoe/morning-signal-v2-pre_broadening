@@ -261,7 +261,7 @@ export class PipelineOrchestrator {
       } catch (err: any) {
         log.warn('Subject line generation failed, using fallback', { error: err.message });
         const editionDate = new Date().toISOString().split('T')[0];
-        subjectLineResult = { options: [`The Morning Signal — ${editionDate}`], tokenUsage: { input: 0, output: 0 }, cost: 0 };
+        subjectLineResult = { options: [`${config.newsletterName} — ${editionDate}`], tokenUsage: { input: 0, output: 0 }, cost: 0 };
       }
 
       // Stage 5: Newsletter Assembly

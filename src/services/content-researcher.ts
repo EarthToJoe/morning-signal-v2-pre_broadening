@@ -166,8 +166,8 @@ export class ContentResearcherService {
   }
 
   private validateCategory(category: string): TopicCategory {
-    const valid: TopicCategory[] = ['defense', 'energy', 'technology', 'policy'];
-    return valid.includes(category as TopicCategory) ? (category as TopicCategory) : 'policy';
+    // Accept any category string — no longer restricted to hardcoded list
+    return category || 'general';
   }
 
 }

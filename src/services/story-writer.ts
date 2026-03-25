@@ -163,7 +163,7 @@ export class StoryWriterService {
       return `--- Quick Hit ${i + 1} ---\nHeadline: ${qh.headline}\nSummary: ${qh.narrativeSummary}\nSources:\n${sources}`;
     }).join('\n\n');
 
-    return `You are a briefing writer for The Morning Signal, a professional newsletter for defense, energy, and technology decision-makers.
+    return `You are a briefing writer for ${config.newsletterName}, a professional newsletter.
 
 TASK: Write ${quickHits.length} quick-hit briefing items. Give each one your full attention.
 
@@ -199,7 +199,7 @@ OUTPUT FORMAT (strict JSON):
       return `--- Watch Item ${i + 1} ---\nHeadline: ${wl.headline}\nSummary: ${wl.narrativeSummary}\nSources:\n${sources}`;
     }).join('\n\n');
 
-    return `You are a forward-looking analyst for The Morning Signal, a professional newsletter for defense, energy, and technology decision-makers.
+    return `You are a forward-looking analyst for ${config.newsletterName}, a professional newsletter.
 
 TASK: Write ${watchListItems.length} watch list items. These are FORWARD-LOOKING — about things that HAVE NOT happened yet.
 

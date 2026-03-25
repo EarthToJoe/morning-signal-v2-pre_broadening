@@ -102,7 +102,7 @@ export class SubjectLineGeneratorService {
 
     // Pad to 3 if fewer
     while (options.length < 3) {
-      options.push(`The Morning Signal — ${new Date().toISOString().split('T')[0]}`);
+      options.push(`${config.newsletterName} — ${new Date().toISOString().split('T')[0]}`);
     }
 
     return options;

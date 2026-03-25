@@ -2,7 +2,7 @@
 // Morning Signal V2 — Core Type Definitions
 // ============================================
 
-export type TopicCategory = 'defense' | 'energy' | 'technology' | 'policy';
+export type TopicCategory = string;
 export type EditionStatus = 'discovery' | 'clustering' | 'awaiting_selection' | 'writing' | 'awaiting_review' | 'approved' | 'delivered' | 'failed';
 export type StoryRole = 'lead_story' | 'quick_hit' | 'watch_list';
 export type DiscoverySource = 'search_api' | 'custom_search' | 'manual_url';
@@ -43,7 +43,7 @@ export interface ArticleDiscoveryResult {
   articles: DiscoveredArticle[];
   totalFound: number;
   duplicatesRemoved: number;
-  categoryCoverage: Record<TopicCategory, number>;
+  categoryCoverage: Record<string, number>;
   searchApiCalls: number;
   warnings: string[];
 }
