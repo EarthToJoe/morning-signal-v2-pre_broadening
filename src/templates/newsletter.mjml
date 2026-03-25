@@ -1,0 +1,82 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Georgia, 'Times New Roman', serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#1a1a2e" />
+      <mj-section padding="0 20px" />
+    </mj-attributes>
+    <mj-style>
+      a { color: #0f3460; text-decoration: underline; }
+      .lead-story h2 { margin-bottom: 8px; }
+      .quick-hit { margin-bottom: 16px; }
+      .watch-item { margin-bottom: 12px; }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#f4f4f8">
+    <!-- Header -->
+    <mj-section background-color="#0f3460" padding="20px 30px">
+      <mj-column>
+        <mj-text color="#ffffff" font-size="28px" font-weight="bold" align="center">
+          {{newsletterName}}
+        </mj-text>
+        <mj-text color="#e0e0e0" font-size="14px" align="center" padding-top="4px">
+          Edition #{{editionNumber}} — {{editionDate}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Lead Story -->
+    <mj-section background-color="#ffffff" padding="24px 30px">
+      <mj-column>
+        <mj-text font-size="12px" color="#0f3460" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
+          Lead Story
+        </mj-text>
+        <mj-text font-size="22px" font-weight="bold" padding-top="8px">
+          {{leadStoryHeadline}}
+        </mj-text>
+        <mj-text padding-top="12px">
+          {{leadStoryContent}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="0"><mj-column><mj-divider border-color="#e0e0e0" border-width="1px" /></mj-column></mj-section>
+
+    <!-- Quick Hits -->
+    <mj-section background-color="#ffffff" padding="24px 30px">
+      <mj-column>
+        <mj-text font-size="12px" color="#0f3460" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
+          Quick Hits
+        </mj-text>
+        {{quickHitsContent}}
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="0"><mj-column><mj-divider border-color="#e0e0e0" border-width="1px" /></mj-column></mj-section>
+
+    <!-- Watch List -->
+    <mj-section background-color="#ffffff" padding="24px 30px">
+      <mj-column>
+        <mj-text font-size="12px" color="#0f3460" font-weight="bold" text-transform="uppercase" letter-spacing="2px">
+          On the Watch List
+        </mj-text>
+        {{watchListContent}}
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#1a1a2e" padding="20px 30px">
+      <mj-column>
+        <mj-text color="#a0a0b0" font-size="12px" align="center">
+          You're receiving this because you subscribed to {{newsletterName}}.
+        </mj-text>
+        <mj-text color="#a0a0b0" font-size="12px" align="center" padding-top="4px">
+          <a href="{{unsubscribeUrl}}" style="color: #a0a0b0;">Unsubscribe</a>
+        </mj-text>
+        <mj-text color="#a0a0b0" font-size="11px" align="center" padding-top="8px">
+          {{physicalAddress}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

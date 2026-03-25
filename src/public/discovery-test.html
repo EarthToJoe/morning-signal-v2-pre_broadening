@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Morning Signal — Parallel AI Tuning Lab</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0}
+    .layout{display:grid;grid-template-columns:380px 1fr;height:100vh}
+    .sidebar{background:#1e293b;border-right:1px solid #334155;overflow-y:auto;padding:16px}
+    .main{overflow-y:auto;padding:20px}
+    h1{color:#38bdf8;font-size:1.3rem;margin-bottom:2px}
+    .subtitle{color:#64748b;font-size:.8rem;margin-bottom:16px}
+    h2{color:#94a3b8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px}
+    label{display:block;font-size:.73rem;color:#94a3b8;margin-bottom:2px}
+    textarea,input[type="text"],input[type="number"]{width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:7px 8px;border-radius:6px;font-size:.83rem;font-family:inherit}
+    textarea{resize:vertical;min-height:70px}
+    textarea:focus,input:focus{outline:none;border-color:#38bdf8}
+    .row{display:flex;gap:8px}.row>*{flex:1}
+    button{padding:7px 12px;border-radius:6px;border:none;cursor:pointer;font-size:.83rem;font-weight:500}
+    .btn-primary{background:#2563eb;color:white;width:100%;margin-top:10px}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-primary:disabled{background:#334155;color:#64748b;cursor:not-allowed}
+    .btn-sm{padding:4px 10px;font-size:.73rem;background:#334155;color:#cbd5e1}
+    .btn-sm:hover{background:#475569}
+    .btn-sm.active{background:#2563eb;color:white}
+    .preset-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+    .field{margin-bottom:8px}
+    .help{font-size:.68rem;color:#64748b;margin-top:2px}
+    .meta-bar{background:#1e293b;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+    .meta-item{text-align:center}
+    .meta-value{font-size:1.2rem;font-weight:700;color:#38bdf8}
+    .meta-label{font-size:.68rem;color:#64748b}
+    .qg{color:#22c55e}.qo{color:#f59e0b}.qb{color:#ef4444}
+    .req-panel{background:#1e293b;border-radius:8px;margin-bottom:14px}
+    .req-hdr{padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.83rem;color:#94a3b8}
+    .req-hdr:hover{color:#e2e8f0}
+    .req-body{padding:0 16px 12px;display:none}
+    .req-body.open{display:block}
+    pre.json{background:#0f172a;padding:10px;border-radius:6px;font-size:.76rem;color:#cbd5e1;overflow-x:auto;white-space:pre-wrap;word-break:break-word;max-height:350px;overflow-y:auto}
+    .card{background:#1e293b;border-radius:8px;padding:12px 14px;margin-bottom:8px;border-left:3px solid #334155}
+    .card:hover{border-left-color:#38bdf8}
+    .card-title{font-size:.93rem;color:#f1f5f9;margin-bottom:3px}
+    .card-url{font-size:.76rem;color:#38bdf8;word-break:break-all}
+    .card-meta{font-size:.76rem;color:#64748b;margin-top:3px}
+    .card-meta strong{color:#94a3b8}
+    details summary{cursor:pointer;font-size:.76rem;color:#64748b;margin-top:5px}
+    .exc-pre{margin-top:5px;background:#0f172a;padding:8px;border-radius:6px;font-size:.76rem;color:#cbd5e1;white-space:pre-wrap;word-break:break-word;max-height:250px;overflow-y:auto}
+    .hist-item{background:#0f172a;border-radius:6px;padding:8px 10px;margin-bottom:5px;cursor:pointer;border:1px solid #334155}
+    .hist-item:hover{border-color:#475569}
+    .hist-item.active{border-color:#2563eb}
+    .hist-time{font-size:.68rem;color:#64748b}
+    .hist-label{font-size:.78rem;color:#e2e8f0;margin-top:1px}
+    .hist-stats{font-size:.68rem;color:#94a3b8}
+    .empty{color:#475569;font-size:.85rem;text-align:center;padding:40px 20px}
+    .stabs{display:flex;border-bottom:1px solid #334155;margin-bottom:10px}
+    .stab{padding:7px 14px;font-size:.83rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent}
+    .stab:hover{color:#e2e8f0}
+    .stab.active{color:#38bdf8;border-bottom-color:#38bdf8}
+    .stab-c{display:none}.stab-c.active{display:block}
+    #statusMsg{color:#38bdf8;font-size:.85rem;margin-bottom:12px;display:none}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar">
+    <h1>🔬 Parallel AI Lab</h1>
+    <p class="subtitle">Tune inputs · see exact payloads · compare results</p>
+    <div class="stabs">
+      <div class="stab active" onclick="sideTab('inputs')">Inputs</div>
+      <div class="stab" onclick="sideTab('history')">History <span id="hCount"></span></div>
+    </div>
+    <div class="stab-c active" id="tab-inputs">
+      <h2>Category Preset</h2>
+      <div class="preset-row">
+        <button class="btn-sm active" onclick="loadPreset('custom',this)">Custom</button>
+        <button class="btn-sm" onclick="loadPreset('defense',this)">Defense</button>
+        <button class="btn-sm" onclick="loadPreset('energy',this)">Energy</button>
+        <button class="btn-sm" onclick="loadPreset('technology',this)">Tech</button>
+        <button class="btn-sm" onclick="loadPreset('policy',this)">Policy</button>
+      </div>
+      <h2>Objective</h2>
+      <div class="field">
+        <textarea id="fObj" rows="5" placeholder="Natural language description of what you want..."></textarea>
+        <div class="help">Primary quality lever. Tell Parallel AI exactly what kind of content to find.</div>
+      </div>
+      <h2>Search Queries (one per line)</h2>
+      <div class="field">
+        <textarea id="fQueries" rows="3" placeholder="US defense contracts 2026&#10;Pentagon military technology"></textarea>
+        <div class="help">Keyword queries that supplement the objective.</div>
+      </div>
+      <h2>Filters</h2>
+      <div class="row field">
+        <div><label>Max Results (1-20)</label><input type="number" id="fMax" value="10" min="1" max="20"></div>
+        <div><label>Days Back</label><input type="number" id="fDays" value="3" min="1" max="30"></div>
+      </div>
+      <div class="field">
+        <label>Exclude Domains</label>
+        <input type="text" id="fExclude" value="linkedin.com, facebook.com, twitter.com, youtube.com">
+      </div>
+      <h2>Excerpt Settings</h2>
+      <div class="row field">
+        <div><label>Chars/Result</label><input type="number" id="fExcPer" value="10000"></div>
+        <div><label>Chars Total</label><input type="number" id="fExcTot" value="50000"></div>
+      </div>
+      <div class="field">
+        <label>Fetch Max Age (sec)</label>
+        <input type="number" id="fFetch" value="172800">
+        <div class="help">172800=2 days. Lower=fresher from Parallel AI index.</div>
+      </div>
+      <button class="btn-primary" id="btnRun" onclick="runSearch()">🔍 Run Search</button>
+      <button class="btn-primary" style="background:#334155;margin-top:6px" onclick="runAll()">Run All 4 Categories</button>
+    </div>
+    <div class="stab-c" id="tab-history"><div id="hList"></div></div>
+  </div>
+  <div class="main">
+    <div id="statusMsg"></div>
+    <div id="results">
+      <div class="empty"><p style="font-size:1.5rem;margin-bottom:8px">👈</p><p>Configure inputs and hit Run Search.</p><p style="margin-top:4px">Every search is saved to History for comparison.</p></div>
+    </div>
+  </div>
+</div>
+<script>
+// --- State ---
+let defaults = {};
+let history = JSON.parse(localStorage.getItem('palHistory') || '[]');
+let activeHistoryIdx = -1;
+
+// --- Init ---
+(async function init() {
+  try {
+    const r = await fetch('/api/test/defaults');
+    defaults = await r.json();
+  } catch(e) { console.warn('Could not load defaults', e); }
+  loadPreset('defense', document.querySelector('.preset-row .btn-sm:nth-child(2)'));
+  renderHistory();
+})();
+
+// --- Sidebar tabs ---
+function sideTab(name) {
+  document.querySelectorAll('.stab').forEach((t,i) => { t.classList.toggle('active', (name==='inputs'?i===0:i===1)); });
+  document.getElementById('tab-inputs').classList.toggle('active', name==='inputs');
+  document.getElementById('tab-history').classList.toggle('active', name==='history');
+}
+
+// --- Presets ---
+function loadPreset(cat, btn) {
+  document.querySelectorAll('.preset-row .btn-sm').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const obj = (defaults.objectives && defaults.objectives[cat]) || '';
+  const queries = (defaults.searchQueries && defaults.searchQueries[cat]) || [];
+  document.getElementById('fObj').value = obj;
+  document.getElementById('fQueries').value = queries.join('\n');
+}
+
+// --- Gather inputs ---
+function gatherInputs() {
+  return {
+    objective: document.getElementById('fObj').value.trim(),
+    searchQueries: document.getElementById('fQueries').value.trim().split('\n').map(s=>s.trim()).filter(Boolean),
+    maxResults: parseInt(document.getElementById('fMax').value) || 10,
+    afterDateDays: parseInt(document.getElementById('fDays').value) || 3,
+    excludeDomains: document.getElementById('fExclude').value.split(',').map(s=>s.trim()).filter(Boolean),
+    excerpts: { max_chars_per_result: parseInt(document.getElementById('fExcPer').value)||10000, max_chars_total: parseInt(document.getElementById('fExcTot').value)||50000 },
+    fetchPolicyMaxAge: parseInt(document.getElementById('fFetch').value) || 86400,
+  };
+}
+
+function setStatus(msg) { const el=document.getElementById('statusMsg'); el.style.display='block'; el.textContent='⏳ '+msg; document.getElementById('btnRun').disabled=true; }
+function clearStatus() { document.getElementById('statusMsg').style.display='none'; document.getElementById('btnRun').disabled=false; }
+
+// --- Run single search ---
+async function runSearch() {
+  const inputs = gatherInputs();
+  if(!inputs.objective && inputs.searchQueries.length===0) { alert('Enter an objective or search queries'); return; }
+  setStatus('Searching Parallel AI...');
+  try {
+    const r = await fetch('/api/test/search', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(inputs) });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error||'Search failed');
+    const entry = { time: new Date().toISOString(), label: inputs.searchQueries[0]||'custom search', type:'single', inputs, data };
+    addHistory(entry);
+    renderResult(data);
+  } catch(e) { alert('Error: '+e.message); } finally { clearStatus(); }
+}
+
+// --- Run all categories ---
+async function runAll() {
+  setStatus('Running all 4 categories...');
+  try {
+    const inputs = gatherInputs();
+    const r = await fetch('/api/test/discover', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      categories:['defense','energy','technology','policy'],
+      afterDateDays: inputs.afterDateDays,
+      excludeDomains: inputs.excludeDomains,
+      maxResults: inputs.maxResults,
+      excerpts: inputs.excerpts,
+    })});
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error||'Discovery failed');
+    const entry = { time: new Date().toISOString(), label: 'Full Discovery (4 categories)', type:'multi', data };
+    addHistory(entry);
+    renderMultiResult(data);
+  } catch(e) { alert('Error: '+e.message); } finally { clearStatus(); }
+}
+
+// --- Render single search result ---
+function renderResult(data) {
+  const el = document.getElementById('results');
+  const m = data.meta;
+  const qClass = m.qualityScore >= 80 ? 'qg' : m.qualityScore >= 50 ? 'qo' : 'qb';
+  let html = `<div class="meta-bar">
+    <div class="meta-item"><div class="meta-value">${m.resultCount}</div><div class="meta-label">Results</div></div>
+    <div class="meta-item"><div class="meta-value">${(m.elapsedMs/1000).toFixed(1)}s</div><div class="meta-label">Elapsed</div></div>
+    <div class="meta-item"><div class="meta-value ${qClass}">${m.qualityScore}%</div><div class="meta-label">Quality</div></div>
+    <div class="meta-item"><div class="meta-value">${m.homepageCount}</div><div class="meta-label">Homepages</div></div>
+    ${m.usage?`<div class="meta-item"><div class="meta-value">${m.usage.map(u=>u.count).join(',')}</div><div class="meta-label">API Units</div></div>`:''}
+  </div>`;
+  // Request payload (collapsible)
+  html += `<div class="req-panel"><div class="req-hdr" onclick="this.nextElementSibling.classList.toggle('open')"><span>📤 Request Payload Sent to Parallel AI</span><span>▼</span></div><div class="req-body"><pre class="json">${esc(JSON.stringify(data.request, null, 2))}</pre></div></div>`;
+  // Articles
+  html += data.results.map((r,i) => articleCard(r,i)).join('');
+  if(data.results.length===0) html += '<div class="empty">No results returned.</div>';
+  el.innerHTML = html;
+}
+
+// --- Render multi-category result ---
+function renderMultiResult(data) {
+  const el = document.getElementById('results');
+  const s = data.summary;
+  let html = `<div class="meta-bar">
+    <div class="meta-item"><div class="meta-value">${s.totalArticles}</div><div class="meta-label">Total Articles</div></div>
+    <div class="meta-item"><div class="meta-value">${s.categories}</div><div class="meta-label">Categories</div></div>
+    <div class="meta-item"><div class="meta-value">${(s.elapsedMs/1000).toFixed(1)}s</div><div class="meta-label">Total Time</div></div>
+  </div>`;
+  for (const [cat, info] of Object.entries(data.categories)) {
+    const ci = info;
+    html += `<h2 style="color:${catColor(cat)};margin:18px 0 8px;font-size:.9rem;text-transform:capitalize">${cat} — ${ci.resultCount||0} results ${ci.elapsedMs?`(${(ci.elapsedMs/1000).toFixed(1)}s)`:''} ${ci.error?`<span style="color:#ef4444">Error: ${esc(ci.error)}</span>`:''}</h2>`;
+    // Show request for this category
+    html += `<div class="req-panel"><div class="req-hdr" onclick="this.nextElementSibling.classList.toggle('open')"><span>📤 ${cat} Request Payload</span><span>▼</span></div><div class="req-body"><pre class="json">${esc(JSON.stringify(ci.request, null, 2))}</pre></div></div>`;
+    if(ci.results) html += ci.results.map((r,i) => articleCard(r,i,cat)).join('');
+  }
+  el.innerHTML = html;
+}
+
+function articleCard(r, i, cat) {
+  const totalChars = r.excerptTotalChars || 0;
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <span style="font-size:.68rem;color:${catColor(cat||'custom')};font-weight:600">#${r.rankPosition!==undefined?r.rankPosition:i}</span>
+      <span style="font-size:.73rem;color:#64748b">${r.publishDate||r.publishedDate||'No date'}</span>
+    </div>
+    <div class="card-title">${esc(r.title)}</div>
+    <a href="${esc(r.url)}" target="_blank" class="card-url">${esc(r.url)}</a>
+    <div class="card-meta">Source: <strong>${esc(r.source)}</strong> · ${r.excerptCount||0} excerpt(s) · ${totalChars.toLocaleString()} chars</div>
+    ${r.excerpts && r.excerpts.length > 0 ? `<details><summary>Show full excerpt (${totalChars.toLocaleString()} chars)</summary><pre class="exc-pre">${esc(r.excerpts.join('\n\n---\n\n'))}</pre></details>` : ''}
+  </div>`;
+}
+
+function catColor(c){return{defense:'#ef4444',energy:'#22c55e',technology:'#a855f7',policy:'#f59e0b',custom:'#38bdf8'}[c]||'#94a3b8'}
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+// --- History ---
+function addHistory(entry) {
+  history.unshift(entry);
+  if(history.length > 50) history = history.slice(0, 50);
+  localStorage.setItem('palHistory', JSON.stringify(history));
+  activeHistoryIdx = 0;
+  renderHistory();
+}
+
+function renderHistory() {
+  document.getElementById('hCount').textContent = history.length > 0 ? `(${history.length})` : '';
+  const el = document.getElementById('hList');
+  if(history.length === 0) { el.innerHTML = '<div class="empty">No searches yet.</div>'; return; }
+  el.innerHTML = history.map((h, i) => {
+    const t = new Date(h.time);
+    const count = h.type==='multi' ? h.data?.summary?.totalArticles : h.data?.meta?.resultCount;
+    const quality = h.type==='single' ? h.data?.meta?.qualityScore : null;
+    return `<div class="hist-item ${i===activeHistoryIdx?'active':''}" onclick="loadHistory(${i})">
+      <div class="hist-time">${t.toLocaleTimeString()} · ${t.toLocaleDateString()}</div>
+      <div class="hist-label">${esc(h.label)}</div>
+      <div class="hist-stats">${count||0} results${quality!==null?' · '+quality+'% quality':''} · ${h.type}</div>
+    </div>`;
+  }).join('');
+}
+
+function loadHistory(idx) {
+  activeHistoryIdx = idx;
+  renderHistory();
+  const h = history[idx];
+  if(h.type === 'single') {
+    if(h.inputs) {
+      document.getElementById('fObj').value = h.inputs.objective || '';
+      document.getElementById('fQueries').value = (h.inputs.searchQueries||[]).join('\n');
+      document.getElementById('fMax').value = h.inputs.maxResults || 10;
+      document.getElementById('fDays').value = h.inputs.afterDateDays || 3;
+      document.getElementById('fExclude').value = (h.inputs.excludeDomains||[]).join(', ');
+    }
+    renderResult(h.data);
+  } else {
+    renderMultiResult(h.data);
+  }
+  sideTab('inputs');
+}
+</script>
+</body>
+</html>

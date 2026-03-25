@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+logs/
+*.log
+coverage/
+.DS_Store
+system-check.js
+test-llm.js
+test-full-pipeline.sh
+update-prompt.js
+update-prompts.js
+0
