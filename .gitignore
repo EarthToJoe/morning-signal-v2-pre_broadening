@@ -10,4 +10,7 @@ test-llm.js
 test-full-pipeline.sh
 update-prompt.js
 update-prompts.js
+add-watch-list-prompt.js
+check-prompts.js
+fix-prompts.js
 0

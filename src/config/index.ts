@@ -26,10 +26,10 @@ export const config = {
 
   // LLM Models (configurable, not hardcoded)
   llmModels: {
-    contentResearcher: process.env.LLM_MODEL_RESEARCHER || 'gpt-4o-mini',
-    storyWriterLead: process.env.LLM_MODEL_WRITER_LEAD || 'gpt-4o',
-    storyWriterBriefings: process.env.LLM_MODEL_WRITER_BRIEFINGS || 'gpt-4o-mini',
-    subjectLineGenerator: process.env.LLM_MODEL_SUBJECT_LINE || 'gpt-4o-mini',
+    contentResearcher: process.env.LLM_MODEL_RESEARCHER || 'gpt-5.4',
+    storyWriterLead: process.env.LLM_MODEL_WRITER_LEAD || 'gpt-5.4',
+    storyWriterBriefings: process.env.LLM_MODEL_WRITER_BRIEFINGS || 'gpt-5.4',
+    subjectLineGenerator: process.env.LLM_MODEL_SUBJECT_LINE || 'gpt-5.4',
   },
 
   // Application

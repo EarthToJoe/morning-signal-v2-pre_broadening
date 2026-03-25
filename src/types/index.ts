@@ -7,7 +7,7 @@ export type EditionStatus = 'discovery' | 'clustering' | 'awaiting_selection' | 
 export type StoryRole = 'lead_story' | 'quick_hit' | 'watch_list';
 export type DiscoverySource = 'search_api' | 'custom_search' | 'manual_url';
 export type EditorialActionType = 'select_stories' | 'reorder' | 'assign_role' | 'approve' | 'reject' | 'edit_content' | 'regenerate_section' | 'custom_search' | 'manual_story' | 'edit_prompt' | 'save_prompt' | 'revert_prompt';
-export type PipelineStage = 'content_researcher' | 'story_writer_lead' | 'story_writer_briefings' | 'subject_line_generator';
+export type PipelineStage = 'content_researcher' | 'story_writer_lead' | 'story_writer_briefings' | 'story_writer_quick_hits' | 'story_writer_watch_list' | 'subject_line_generator';
 export type SubscriptionStatus = 'active' | 'unsubscribed';
 
 // --- Search & Discovery ---

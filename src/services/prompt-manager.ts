@@ -8,9 +8,11 @@ import { ManagedPrompt, PipelineStage } from '../types';
 
 // We keep the original system defaults in memory so revert always works.
 const SYSTEM_DEFAULTS: Record<PipelineStage, string> = {
-  content_researcher: '', // Loaded from DB on first access
+  content_researcher: '',
   story_writer_lead: '',
   story_writer_briefings: '',
+  story_writer_quick_hits: '',
+  story_writer_watch_list: '',
   subject_line_generator: '',
 };
 
