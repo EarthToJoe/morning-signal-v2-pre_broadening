@@ -230,6 +230,19 @@ export interface TopicConfig {
   category: TopicCategory;
   displayName: string;
   searchQueries: string[];
+  objective?: string;           // Custom Parallel AI objective for this category
+  preferredSources?: string;    // Comma-separated preferred source domains
   priority: number;
   isActive: boolean;
+  profileId?: string;           // Which newsletter profile this belongs to
+}
+
+// --- Newsletter Profile ---
+
+export interface NewsletterProfile {
+  id: string;
+  name: string;                 // "The Morning Signal", "Tech Pulse", etc.
+  audience: string;             // "Senior defense/energy/tech professionals"
+  isPreset: boolean;            // true = built-in preset, false = user-created
+  createdAt: Date;
 }

@@ -77,29 +77,29 @@ export class PipelineOrchestrator {
   /**
    * Start a new pipeline run (Phase 1: discovery + clustering).
    */
-  async startPipeline(correlationId?: string, promptOverride?: string | null): Promise<PipelineRunStatus> {
+  async startPipeline(correlationId?: string, promptOverride?: string | null, profileId?: string, daysBack?: number, editionNumberOverride?: number): Promise<PipelineRunStatus> {
     const corrId = correlationId || generateCorrelationId();
     const log = createCorrelatedLogger(corrId, 'orchestrator');
 
     log.info('Pipeline started');
 
     // Create edition record
-    const editionNumber = await this.getNextEditionNumber();
+    const editionNumber = editionNumberOverride || await this.getNextEditionNumber(profileId);
     const editionDate = new Date().toISOString().split('T')[0];
 
     await query(
-      `INSERT INTO editions (correlation_id, status, edition_number, edition_date)
-       VALUES ($1, $2, $3, $4)`,
-      [corrId, 'discovery', editionNumber, editionDate]
+      `INSERT INTO editions (correlation_id, status, edition_number, edition_date, profile_id)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [corrId, 'discovery', editionNumber, editionDate, profileId || null]
     );
 
     try {
       // Stage 1: Article Discovery
       await this.updateStatus(corrId, 'discovery');
-      const topicConfigs = await this.getTopicConfigs();
+      const topicConfigs = await this.getTopicConfigs(profileId);
 
       const discoveryResult = await withRetry(
-        () => this.articleDiscovery.discoverArticles(topicConfigs, corrId),
+        () => this.articleDiscovery.discoverArticles(topicConfigs, corrId, daysBack),
         DEFAULT_RETRY, corrId, 'article-discovery', log
       );
 
@@ -271,7 +271,9 @@ export class PipelineOrchestrator {
         subjectLineResult.options[0],
         edition.editionNumber,
         edition.editionDate,
-        correlationId
+        correlationId,
+        undefined,
+        edition.newsletterName
       );
 
       // Persist assembled newsletter
@@ -325,7 +327,11 @@ export class PipelineOrchestrator {
 
   // --- Helper Methods ---
 
-  private async getNextEditionNumber(): Promise<number> {
+  private async getNextEditionNumber(profileId?: string): Promise<number> {
+    if (profileId) {
+      const result = await query('SELECT COALESCE(MAX(edition_number), 0) + 1 as next FROM editions WHERE profile_id = $1', [profileId]);
+      return result.rows[0].next;
+    }
     const result = await query('SELECT COALESCE(MAX(edition_number), 0) + 1 as next FROM editions');
     return result.rows[0].next;
   }
@@ -336,17 +342,34 @@ export class PipelineOrchestrator {
     return result.rows[0].id;
   }
 
-  private async getEdition(correlationId: string): Promise<{ editionNumber: number; editionDate: string }> {
-    const result = await query('SELECT edition_number, edition_date FROM editions WHERE correlation_id = $1', [correlationId]);
+  private async getEdition(correlationId: string): Promise<{ editionNumber: number; editionDate: string; newsletterName: string }> {
+    const result = await query(
+      `SELECT e.edition_number, e.edition_date, np.name as profile_name
+       FROM editions e LEFT JOIN newsletter_profiles np ON e.profile_id = np.id
+       WHERE e.correlation_id = $1`,
+      [correlationId]
+    );
     if (result.rows.length === 0) throw new Error(`Edition not found: ${correlationId}`);
-    return { editionNumber: result.rows[0].edition_number, editionDate: result.rows[0].edition_date };
+    return {
+      editionNumber: result.rows[0].edition_number,
+      editionDate: result.rows[0].edition_date,
+      newsletterName: result.rows[0].profile_name || config.newsletterName,
+    };
   }
 
-  private async getTopicConfigs(): Promise<TopicConfig[]> {
-    const result = await query('SELECT * FROM topic_config WHERE is_active = true ORDER BY priority');
+  private async getTopicConfigs(profileId?: string): Promise<TopicConfig[]> {
+    let result;
+    if (profileId) {
+      result = await query('SELECT * FROM topic_config WHERE profile_id = $1 AND is_active = true ORDER BY priority', [profileId]);
+    } else {
+      result = await query('SELECT * FROM topic_config WHERE is_active = true ORDER BY priority');
+    }
     return result.rows.map((row: any) => ({
       id: row.id, category: row.category, displayName: row.display_name,
-      searchQueries: row.search_queries, priority: row.priority, isActive: row.is_active,
+      searchQueries: row.search_queries, objective: row.objective,
+      preferredSources: row.preferred_sources,
+      priority: row.priority, isActive: row.is_active,
+      profileId: row.profile_id,
     }));
   }
 

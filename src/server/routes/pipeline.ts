@@ -8,8 +8,8 @@ const orchestrator = new PipelineOrchestrator();
 // POST /api/pipeline/start — Start a new pipeline run (Phase 1)
 router.post('/start', async (req: Request, res: Response) => {
   try {
-    const { promptOverride } = req.body || {};
-    const status = await orchestrator.startPipeline(undefined, promptOverride);
+    const { promptOverride, profileId, daysBack, editionNumber } = req.body || {};
+    const status = await orchestrator.startPipeline(undefined, promptOverride, profileId, daysBack, editionNumber);
     res.json(status);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

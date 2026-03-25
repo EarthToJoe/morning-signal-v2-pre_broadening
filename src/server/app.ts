@@ -8,6 +8,7 @@ import { promptsRouter } from './routes/prompts';
 import { subscribersRouter } from './routes/subscribers';
 import { editionsRouter } from './routes/editions';
 import { testDiscoveryRouter } from './routes/test-discovery';
+import { profilesRouter } from './routes/profiles';
 
 export function createApp() {
   const app = express();
@@ -31,6 +32,7 @@ export function createApp() {
   app.use('/api/subscribers', subscribersRouter);
   app.use('/api/editions', editionsRouter);
   app.use('/api/test', testDiscoveryRouter);
+  app.use('/api/profiles', profilesRouter);
 
   // Error handler (must be last)
   app.use(errorHandler);

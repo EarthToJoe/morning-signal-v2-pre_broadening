@@ -140,21 +140,24 @@ function daysAgo(n: number): string {
 function buildObjective(topic: TopicConfig): string {
   const base = `Find specific, individual news articles published in the last few days. I need articles with unique URLs that point to individual stories — NOT website homepages, section landing pages, company LinkedIn profiles, or topic index pages. Each result should be a single news story or report with a specific headline, author or publication date, and substantive content. Prefer articles from established news outlets.`;
 
-  // If the topic config has a custom objective, use it
+  // If the topic config has a custom objective, use it (prepend "Topic:" automatically)
   if ((topic as any).objective) {
-    return `${base} ${(topic as any).objective}`;
+    const userObjective = (topic as any).objective;
+    // Don't double-add "Topic:" if the user already included it
+    const topicPart = userObjective.toLowerCase().startsWith('topic:') ? userObjective : `Topic: ${userObjective}`;
+    return `${base} ${topicPart}`;
   }
 
   // Fallback: hardcoded Morning Signal defaults
   const defaults: Record<string, string> = {
-    defense: `Topic: U.S. and allied defense developments including military contracts, weapons programs, force posture changes, Pentagon policy, NATO operations, defense industry news, and military technology. Preferred sources: Defense News, Breaking Defense, Defense One, Military Times, Stars and Stripes, Reuters, AP, USNI News.`,
-    energy: `Topic: Energy sector developments including oil & gas markets, renewable energy projects, grid infrastructure, nuclear energy policy, energy legislation, utility company news, and energy technology. Preferred sources: E&E News, Utility Dive, Reuters, Bloomberg Energy, S&P Global, Rigzone.`,
-    technology: `Topic: Technology developments relevant to government and enterprise including cybersecurity incidents, AI policy and regulation, cloud computing contracts, semiconductor supply chain, space technology, and federal IT modernization. Preferred sources: Ars Technica, The Verge, Wired, Federal News Network, NextGov, CyberScoop.`,
-    policy: `Topic: U.S. government policy affecting defense, energy, and technology sectors including executive orders, congressional legislation, regulatory actions, budget decisions, and agency leadership changes. Preferred sources: Politico, The Hill, Reuters, AP, Federal News Network, Roll Call.`,
+    defense: `U.S. and allied defense developments including military contracts, weapons programs, force posture changes, Pentagon policy, NATO operations, defense industry news, and military technology. Preferred sources: Defense News, Breaking Defense, Defense One, Military Times, Stars and Stripes, Reuters, AP, USNI News.`,
+    energy: `Energy sector developments including oil & gas markets, renewable energy projects, grid infrastructure, nuclear energy policy, energy legislation, utility company news, and energy technology. Preferred sources: E&E News, Utility Dive, Reuters, Bloomberg Energy, S&P Global, Rigzone.`,
+    technology: `Technology developments relevant to government and enterprise including cybersecurity incidents, AI policy and regulation, cloud computing contracts, semiconductor supply chain, space technology, and federal IT modernization. Preferred sources: Ars Technica, The Verge, Wired, Federal News Network, NextGov, CyberScoop.`,
+    policy: `U.S. government policy affecting defense, energy, and technology sectors including executive orders, congressional legislation, regulatory actions, budget decisions, and agency leadership changes. Preferred sources: Politico, The Hill, Reuters, AP, Federal News Network, Roll Call.`,
   };
 
-  const categoryPart = defaults[topic.category] || `Topic: ${topic.displayName}. Search for recent news and developments.`;
-  return `${base} ${categoryPart}`;
+  const categoryPart = defaults[topic.category] || `${topic.displayName}. Search for recent news and developments.`;
+  return `${base} Topic: ${categoryPart}`;
 }
 
 export class ArticleDiscoveryService {
@@ -178,7 +181,7 @@ export class ArticleDiscoveryService {
    * This replaces the old approach of one call per query string, which was producing
    * generic homepage results because it lacked the objective context.
    */
-  async discoverArticles(topicConfigs: TopicConfig[], correlationId: string): Promise<ArticleDiscoveryResult> {
+  async discoverArticles(topicConfigs: TopicConfig[], correlationId: string, daysBack?: number): Promise<ArticleDiscoveryResult> {
     const log = createCorrelatedLogger(correlationId, 'article-discovery');
     const allArticles: DiscoveredArticle[] = [];
     const warnings: string[] = [];
@@ -189,7 +192,7 @@ export class ArticleDiscoveryService {
       categoryCoverage[topic.category] = 0;
     }
 
-    const afterDate = daysAgo(3);
+    const afterDate = daysAgo(daysBack || 3);
     const excludeDomains = ['linkedin.com', 'facebook.com', 'twitter.com', 'youtube.com'];
 
     for (const topic of topicConfigs.filter(t => t.isActive)) {
@@ -280,7 +283,7 @@ export class ArticleDiscoveryService {
       const newArticles: DiscoveredArticle[] = [];
 
       for (const raw of results) {
-        const article = this.validateArticle(raw, 'policy', 'custom_search');
+        const article = this.validateArticle(raw, 'general', 'custom_search');
         if (article) {
           newArticles.push(article);
         }

@@ -173,13 +173,13 @@ router.post('/:correlationId/manual-story', async (req: Request, res: Response) 
 
       await query(
         `INSERT INTO articles (id, edition_id, url, title, snippet, source, published_at, rank_position, category, discovered_via)
-         VALUES ($1, $2, $3, $4, $5, $6, $7::timestamp, 0, 'policy', 'manual_url')`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7::timestamp, 0, 'general', 'manual_url')`,
         [articleId, editionId, url, metadata.title || url, metadata.snippet || '', metadata.source || '', publishedAt]
       );
 
       await query(
         `INSERT INTO story_candidates (id, edition_id, suggested_role, headline, narrative_summary, category, is_manual_story, manual_story_attribution)
-         VALUES ($1, $2, 'quick_hit', $3, $4, 'policy', true, 'editor-sourced')`,
+         VALUES ($1, $2, 'quick_hit', $3, $4, 'general', true, 'editor-sourced')`,
         [candidateId, editionId, metadata.title || 'Manual Story', metadata.snippet || '']
       );
 
@@ -188,7 +188,7 @@ router.post('/:correlationId/manual-story', async (req: Request, res: Response) 
       // Free-text description
       await query(
         `INSERT INTO story_candidates (id, edition_id, suggested_role, headline, narrative_summary, category, is_manual_story, manual_story_attribution)
-         VALUES ($1, $2, 'quick_hit', $3, $4, 'policy', true, 'editor-sourced')`,
+         VALUES ($1, $2, 'quick_hit', $3, $4, 'general', true, 'editor-sourced')`,
         [candidateId, editionId, description, description]
       );
     }
@@ -359,6 +359,23 @@ router.get('/themes', (_req: Request, res: Response) => {
   res.json({ presets: PRESET_THEMES, default: DEFAULT_THEME });
 });
 
+// GET /api/editorial/:correlationId/profile-name — Get the newsletter name for this edition
+router.get('/:correlationId/profile-name', async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT np.name, np.audience FROM editions e
+       LEFT JOIN newsletter_profiles np ON e.profile_id = np.id
+       WHERE e.correlation_id = $1`,
+      [req.params.correlationId]
+    );
+    const name = result.rows[0]?.name || config.newsletterName;
+    const audience = result.rows[0]?.audience || '';
+    res.json({ name, audience });
+  } catch (error: any) {
+    res.json({ name: config.newsletterName, audience: '' });
+  }
+});
+
 // POST /api/editorial/:correlationId/reassemble — Re-assemble newsletter with theme + edited sections
 router.post('/:correlationId/reassemble', async (req: Request, res: Response) => {
   try {
@@ -384,14 +401,19 @@ router.post('/:correlationId/reassemble', async (req: Request, res: Response) =>
       totalWordCount: 0, tokenUsage: { input: 0, output: 0 }, cost: 0,
     };
 
-    const edition = await query('SELECT edition_number, edition_date FROM editions WHERE correlation_id = $1', [req.params.correlationId]);
+    const edition = await query(
+      `SELECT e.edition_number, e.edition_date, np.name as profile_name
+       FROM editions e LEFT JOIN newsletter_profiles np ON e.profile_id = np.id
+       WHERE e.correlation_id = $1`, [req.params.correlationId]
+    );
     const subjectResult = await query('SELECT selected_subject_line FROM assembled_newsletters WHERE edition_id = $1', [editionId]);
     const subjectLine = subjectResult.rows[0]?.selected_subject_line || config.newsletterName;
+    const profileName = edition.rows[0]?.profile_name;
 
     const assembled = await newsletterAssembler.assemble(
       writtenNewsletter, subjectLine,
       edition.rows[0].edition_number, edition.rows[0].edition_date,
-      req.params.correlationId, theme
+      req.params.correlationId, theme, profileName
     );
 
     // Update assembled newsletter in DB

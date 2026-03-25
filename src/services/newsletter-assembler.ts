@@ -67,10 +67,12 @@ export class NewsletterAssemblerService {
     editionNumber: number,
     editionDate: string,
     correlationId: string,
-    theme?: Partial<NewsletterTheme>
+    theme?: Partial<NewsletterTheme>,
+    newsletterName?: string
   ): Promise<AssembledNewsletter> {
     const log = createCorrelatedLogger(correlationId, 'newsletter-assembler');
     const t = { ...DEFAULT_THEME, ...theme };
+    const name = newsletterName || config.newsletterName;
 
     log.info('Assembling newsletter', { editionNumber, editionDate, subjectLine });
 
@@ -93,7 +95,7 @@ export class NewsletterAssemblerService {
     }
 
     const populated = mjmlTemplate
-      .replace(/\{\{newsletterName\}\}/g, config.newsletterName)
+      .replace(/\{\{newsletterName\}\}/g, name)
       .replace(/\{\{editionNumber\}\}/g, String(editionNumber))
       .replace(/\{\{editionDate\}\}/g, editionDate)
       .replace(/\{\{leadStoryHeadline\}\}/g, writtenNewsletter.leadStory.headline)
@@ -119,10 +121,10 @@ export class NewsletterAssemblerService {
       html = result.html;
     } catch (err: any) {
       log.error('MJML compilation failed', { error: err.message });
-      html = this.buildBasicHtmlFallback(writtenNewsletter, editionNumber, editionDate, t);
+      html = this.buildBasicHtmlFallback(writtenNewsletter, editionNumber, editionDate, t, name);
     }
 
-    const plainText = this.generatePlainText(writtenNewsletter, editionNumber, editionDate);
+    const plainText = this.generatePlainText(writtenNewsletter, editionNumber, editionDate, name);
     const sectionMetadata = [
       { role: 'lead_story', headline: writtenNewsletter.leadStory.headline, wordCount: writtenNewsletter.leadStory.wordCount },
       ...writtenNewsletter.quickHits.map(qh => ({ role: 'quick_hit', headline: qh.headline, wordCount: qh.wordCount })),
@@ -133,9 +135,10 @@ export class NewsletterAssemblerService {
     return { html, plainText, editionNumber, editionDate, sectionMetadata };
   }
 
-  private generatePlainText(newsletter: WrittenNewsletter, editionNumber: number, editionDate: string): string {
+  private generatePlainText(newsletter: WrittenNewsletter, editionNumber: number, editionDate: string, newsletterName?: string): string {
+    const name = newsletterName || config.newsletterName;
     const lines: string[] = [];
-    lines.push(`${config.newsletterName} — Edition #${editionNumber} — ${editionDate}`);
+    lines.push(`${name} — Edition #${editionNumber} — ${editionDate}`);
     lines.push('='.repeat(60));
     lines.push('');
     lines.push('LEAD STORY');
@@ -164,13 +167,14 @@ export class NewsletterAssemblerService {
     return lines.join('\n');
   }
 
-  private buildBasicHtmlFallback(newsletter: WrittenNewsletter, editionNumber: number, editionDate: string, t: NewsletterTheme): string {
+  private buildBasicHtmlFallback(newsletter: WrittenNewsletter, editionNumber: number, editionDate: string, t: NewsletterTheme, newsletterName?: string): string {
+    const name = newsletterName || config.newsletterName;
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
       body{font-family:${t.fontFamily};max-width:600px;margin:0 auto;padding:20px;color:${t.textColor};background:${t.backgroundColor}}
       h1{color:${t.headerColor}} h2{color:${t.accentColor}} a{color:${t.accentColor}}
       .footer{font-size:12px;color:#888;margin-top:40px;border-top:1px solid #ddd;padding-top:16px}
     </style></head><body>
-      <h1>${config.newsletterName}</h1><p>Edition #${editionNumber} — ${editionDate}</p><hr>
+      <h1>${name}</h1><p>Edition #${editionNumber} — ${editionDate}</p><hr>
       <h2>${newsletter.leadStory.headline}</h2>${newsletter.leadStory.htmlContent}<hr>
       <h2>Quick Hits</h2>${newsletter.quickHits.map(qh => `<h3>${qh.headline}</h3>${qh.htmlContent}`).join('')}<hr>
       <h2>On the Watch List</h2>${newsletter.watchList.map(wl => `<h3>${wl.headline}</h3>${wl.htmlContent}`).join('')}
