@@ -59,6 +59,21 @@ These are proven, stable components that should carry forward directly into V3:
 - Do not rebuild prompts from scratch — adapt and extend the proven ones
 - Do not abstract the pipeline into a generic "workflow engine" — the deterministic sequence is a feature
 
+### Prompt Architecture Preservation Directive
+The V2 prompting system is not a collection of text strings — it is a tuned, interdependent architecture that took significant iteration to reach its current quality level. V3 MUST reuse the V2 prompt logic, structures, instruction patterns, and output-shaping techniques directly. This includes:
+
+- The instruction layering pattern (numbered instructions with explicit minimums and "DO NOT" constraints)
+- The JSON output format specifications embedded in each prompt
+- The defensive parsing pipeline (`parseLlmJson()` handling raw JSON, markdown-wrapped JSON, and missing fields)
+- The relationship between the clustering prompt's output format and the story writer's input format (article indices → candidate objects → source articles fed into writing prompts)
+- The specific instruction wordings that were discovered through testing: "DO NOT write fewer than X words," "things that ALREADY HAPPENED" vs "HAVE NOT happened yet," "present it as its own single-source candidate"
+- The temperature settings per call type (0.3 for clustering, 0.5 for lead story, 0.4 for briefings)
+- The `response_format: { type: 'json_object' }` enforcement on all LLM calls
+
+If V3 needs to modify a prompt, the modification should be additive (add new instructions, add template variables like `{{audience}}`) rather than rewriting from scratch. The V2 prompt files and database seed data should be treated as the starting point, not as disposable scaffolding.
+
+Where V3 introduces new prompt capabilities (e.g., audience-aware writing, source preference injection), these should be implemented as new template variables inserted into the existing prompt structures, not as replacement prompts.
+
 ---
 
 ## 2. V3 Product Vision
@@ -328,7 +343,49 @@ Yes, if the output quality is consistently good and the workflow saves real time
 
 ---
 
-## 10. Summary
+## 10. Critical V3 Use Cases
+
+These are concrete workflows that V3 should support. They represent the real ways users will want to interact with the system beyond the basic "run pipeline, review, publish" flow.
+
+### Use Case 1: Use My Own Sources Only
+**Scenario:** A user has 5-10 specific article URLs they've already found. They don't want the system to search for articles — they want to skip discovery entirely and go straight to clustering and writing from their curated list.
+**How it works:** In the setup wizard or Phase 1, the user pastes URLs (or uploads a list). The system fetches metadata for each, creates article records, and feeds them directly to the clustering step. No Parallel AI call needed.
+**Guardrail:** This is an alternative entry point to the pipeline, not a replacement. The default path (AI-discovered articles) should remain the primary flow.
+
+### Use Case 2: Blend My Sources with Discovered News
+**Scenario:** A user wants the AI to discover articles as usual, but also wants to guarantee that 2-3 specific articles they've found are included in the pool.
+**How it works:** The user adds their URLs during Phase 1 (manual story injection already exists in V2). The key improvement: these user-provided articles should be clearly marked and given priority consideration during clustering, not just appended as afterthoughts.
+**V2 status:** Partially built. Manual story injection works but injected stories bypass clustering — they become standalone candidates. V3 should allow injected articles to participate in the clustering step alongside discovered articles.
+
+### Use Case 3: Group Multiple Articles into a Single Story
+**Scenario:** The user sees 3 separate story candidates in Phase 1 that are actually about the same topic. They want to merge them into one stronger story.
+**How it works:** In Phase 1, the user selects multiple candidates and clicks "Merge." The system combines their source articles into a single candidate with a merged narrative summary. When GPT writes the story, it draws from all the combined sources.
+**V2 status:** Not built. GPT does the grouping during clustering, but the user can't manually merge or split candidates after clustering.
+
+### Use Case 4: Manually Curate a Story Cluster
+**Scenario:** The user wants to create a story from scratch by picking specific articles from the discovered pool and grouping them together, rather than accepting GPT's clustering.
+**How it works:** In Phase 1, the user sees all discovered articles (not just the clustered candidates) and can drag articles into custom groups. Each group becomes a story candidate.
+**Guardrail:** This is a power-user feature. The default should remain GPT-clustered candidates. Manual curation should be an "advanced" option, not the primary interface.
+
+### Use Case 5: Rerun One Section Without Rerunning the Whole Edition
+**Scenario:** The user is in Phase 2 (story editing) and the lead story is weak, but the quick hits and watch list are fine. They want to regenerate just the lead story without re-running discovery or re-clustering.
+**V2 status:** Partially built. The "Regenerate" button exists in Phase 2 and calls the story writer for just that section. V3 should ensure this works reliably and gives clear feedback.
+**V3 improvement:** Allow the user to provide additional guidance when regenerating ("make it more analytical," "focus on the budget implications," "shorter and punchier").
+
+### Use Case 6: Preserve and Import Proven V2 Prompt Assets
+**Scenario:** V3 is being built. The developer needs to carry forward all V2 prompts, instruction patterns, and tuned behaviors without losing quality.
+**How it works:** V2's `db-seed.ts` contains the canonical prompt texts. V2's `saved_prompts` table contains any editor-modified overrides. V3's migration should import these directly. The Prompt Manager's default/override/revert pattern should carry forward unchanged.
+**Critical detail:** The prompts are not just text — they are a system. The clustering prompt's output format (sourceArticleIndices) feeds directly into the story writer's input format (sourceArticles array). Changing one without updating the other breaks the pipeline. V3 must preserve this chain.
+
+### Use Case 7: Source Collections as a First-Class Concept
+**Scenario:** A user who publishes a defense newsletter has a set of trusted sources they always want to prioritize: Defense News, Breaking Defense, USNI News, etc. They don't want to re-enter these every time. They want to define a "source collection" that's associated with their newsletter profile.
+**How it works:** Each newsletter profile can have one or more source collections — named groups of domains that are either preferred (boosted in search) or excluded (blocked from search). These collections persist across editions and are applied automatically during discovery.
+**V2 status:** The `preferred_sources` field exists on topic_config but is not wired into the Parallel AI objective. The `exclude_domains` list is hardcoded. V3 should make both user-configurable and persistent per profile.
+**Distinction from filtering:** This is not just "include/exclude domains." It's a curated, named, reusable set of sources that reflects the user's editorial judgment about what sources are trustworthy for their topic. It's closer to an analyst's source list than a search filter.
+
+---
+
+## 11. Summary
 
 ### Product Strategy Summary
 Build V3 as a single-user, deployed, account-based newsletter creation product. Keep the AI pipeline as the center of gravity. Add the infrastructure layer (auth, persistence, delivery, history) that turns the prototype into a real product. Rebuild the frontend in React for polish and maintainability. Deploy to hughesnode.com. Don't chase multi-user, analytics, or public pages until the core creation-to-delivery loop is excellent for one user.
